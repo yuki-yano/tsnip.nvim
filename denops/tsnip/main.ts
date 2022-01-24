@@ -13,14 +13,13 @@ type Pos = {
 type Param = {
   name: string;
   type: "single_line";
-  defaultValue?: string;
 } | {
   name: string;
   type: "multi_line";
 };
 
 type Inputs = {
-  [key: string]: { text: string; defaultValue?: string } | undefined;
+  [key: string]: { text: string | undefined } | undefined;
 };
 
 type Snippet = {
@@ -145,8 +144,7 @@ export const main = async (denops: Denops): Promise<void> => {
         inputs = {
           ...inputs,
           [name]: {
-            text: input,
-            defaultValue: param.defaultValue,
+            text: input === "" ? undefined : input,
           },
         };
 
@@ -201,7 +199,7 @@ export const main = async (denops: Denops): Promise<void> => {
       if (param.type === "single_line") {
         await renderPreview(denops, {
           ...inputs,
-          [name]: { text: input, defaultValue: param.defaultValue },
+          [name]: { text: input },
         });
       } else if (param.type === "multi_line") {
         if (input.length === 1) {
