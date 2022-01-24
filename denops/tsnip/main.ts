@@ -37,6 +37,7 @@ let inputs: Inputs;
 let paramIndex: number;
 let lastExtMarkId: number;
 let currentLine: string;
+let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
 
 const path = `${Deno.env.get("HOME")}/.vim/tsnip`;
 
@@ -89,11 +90,17 @@ export const main = async (denops: Denops): Promise<void> => {
     execute: async (snippetName: unknown): Promise<void> => {
       ensureString(snippetName);
 
-      const module = await import(
-        toFileUrl(`${path}/${await op.filetype.get(denops)}.ts`).href
-      );
+      const ft = await op.filetype.get(denops);
+      if (modules[ft] == null) {
+        modules = {
+          ...modules,
+          [ft]: await import(
+            toFileUrl(`${path}/${ft}.ts`).href
+          ),
+        };
+      }
 
-      snippet = module[snippetName];
+      snippet = modules[ft][snippetName];
       bufnr = await denops.call("bufnr") as number;
       const p = await denops.call("getpos", ".") as [
         number,
@@ -162,7 +169,7 @@ export const main = async (denops: Denops): Promise<void> => {
         await denops.call(
           "appendbufline",
           bufnr,
-          pos.line,
+          pos.line - 1,
           [
             `${currentLine}${snippet.render(inputs).split("\n")[0]}`,
             ...snippet.render(inputs).split("\n").slice(1),
@@ -189,6 +196,28 @@ export const main = async (denops: Denops): Promise<void> => {
     close: async (): Promise<void> => {
       if (lastExtMarkId != null) {
         await deletePreview(denops);
+      }
+    },
+    items: async (): Promise<Array<{ word: string; info: string }>> => {
+      try {
+        const ft = await op.filetype.get(denops);
+        if (modules[ft] == null) {
+          modules = {
+            ...modules,
+            [ft]: await import(
+              toFileUrl(`${path}/${ft}.ts`).href
+            ),
+          };
+        }
+
+        return Object.entries(modules[ft]).map(([name, snippet]) => (
+          {
+            word: name,
+            info: snippet.text ?? snippet.render({}),
+          }
+        ));
+      } catch (_) {
+        return [];
       }
     },
   };
