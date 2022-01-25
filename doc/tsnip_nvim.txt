@@ -1,0 +1,108 @@
+*tsnip-nvim.txt*
+
+Plugin to expand snippets written in Pure TypeScript(Deno).
+
+This plugin depends on denops.vim and nui.nvim.
+
+- denops.vim
+    https://github.com/vim-denops/denops.vim
+- nui.nvim
+    https://github.com/MunifTanjim/nui.nvim
+
+To use it with completion, you need coc.nvim or ddc.vim
+
+- coc.nvim
+    https://github.com/neoclide/coc.nvim
+- ddc.vim
+    https://github.com/Shougo/ddc.vim 
+
+Author:  yuki-yano
+License: MIT
+
+==============================================================================
+USAGE                                           *tsnip-usage*
+
+Completion
+
+- coc.nvim:
+    :CocInstall coc-tsnip
+
+- ddc.vim:
+    call ddc#custom#patch_global('sources', ['tsnip'])
+
+Can be used with coc.nvim or ddc.vim. Place the snippet file in
+`~/.vim/tsnip/{filetype}.ts`.
+
+==============================================================================
+SNIPPET_FORMAT                                  *tsnip-snippt-format*
+
+Pure TypeScript object.
+
+>
+    type Snippet = {
+      name?: string;
+      text?: string;
+      params: Array<
+        {
+          name: string;
+          type: "single_line";
+        } | {
+          name: string;
+          type: "multi_line";
+        }
+      >;
+      render: (inputs: {
+        [key: string]: { text: string | undefined } | undefined;
+      }) => string;
+    }
+<
+
+==============================================================================
+SNIPPET_PROPERTY                                 *tsnip-snippt-property*
+
+name (optional):
+    Name of the snippet to be displayed on the first line during completion.
+
+text (optional):
+    Content of the snippet displayed during completion.
+    If not defined, the result of render will be used.
+
+params:
+    Definition of arguments to be passed to the render function.
+    In the case of multi_line, input is repeated until
+    an empty string is entered.
+
+render:
+    Function that takes the input params and renders
+    the result of the snippet.
+
+
+==============================================================================
+EXAMPLE                                         *tsnip-example*
+
+>
+    import { Snippet } from "https://deno.land/x/tsnip_vim@v0.2/mod.ts";
+
+    export const state: Snippet = {
+      name: "useState",
+      text: "const [${1:state}, set${State}] = useState(${2:default_value})",
+      params: [
+        {
+          name: "state",
+          type: "single_line",
+        },
+        {
+          name: "default_value",
+          type: "single_line",
+        },
+      ],
+      render: ({ state, default_value }) =>
+        `const [${state?.text ?? ""}, set${
+          state != null
+            ? `${state.text?.charAt(0).toUpperCase()}${state.text?.slice(1)}`
+            : ""
+        }] = useState(${default_value?.text ?? ""})`,
+    };
+<
+
+vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:
