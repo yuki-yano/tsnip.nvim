@@ -26,10 +26,14 @@ let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
 const path = `${Deno.env.get("HOME")}/.vim/tsnip`;
 
 const snippetRender = (snippet: Snippet, inputs: Inputs) => {
-  return snippet.render({
-    ...inputs,
-    __fileName: { text: fileName },
-  }).replace(/^\n/, "");
+  return snippet.render(inputs, {
+    fileName: {
+      text: fileName,
+    },
+  }).replace(
+    /^\n/,
+    "",
+  );
 };
 
 const renderPreview = async (

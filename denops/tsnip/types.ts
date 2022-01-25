@@ -10,9 +10,13 @@ export type Inputs = {
   [key: string]: { text: string | undefined } | undefined;
 };
 
+export type ExtraInputs = {
+  fileName: { text: string };
+};
+
 export type Snippet = {
   name?: string;
   text?: string;
   params: Array<Param>;
-  render: (inputs: Inputs) => string;
+  render: (inputs: Inputs, extraInputs: ExtraInputs) => string;
 };
