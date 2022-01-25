@@ -6,7 +6,7 @@ This plugin depends on [denops.vim](https://github.com/vim-denops/denops.vim).
 
 ## Demo
 
-
+https://user-images.githubusercontent.com/5423775/150894287-0d17e966-7cab-4953-9b69-a8c54f511284.mp4
 
 ## Installation
 
