@@ -35,6 +35,7 @@ export class Source extends BaseSource<Record<string, never>> {
     args: OnCompleteDoneArguments<Record<string, never>, CompletionMetadata>,
   ) {
     await args.denops.call("tsnip#remove_suffix_word", args.userData.word);
+    await args.denops.cmd("redraw");
     await args.denops.cmd(`TSnip ${args.userData.word}`);
   }
 }
