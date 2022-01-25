@@ -1,32 +1,15 @@
 import { toFileUrl } from "https://deno.land/std@0.120.0/path/mod.ts";
 import type { Denops } from "https://deno.land/x/denops_std@v2.4.0/mod.ts";
-import { globals } from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
+import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
 import * as helper from "https://deno.land/x/denops_std@v2.4.0/helper/mod.ts";
 import * as op from "https://deno.land/x/denops_std@v2.4.0/option/mod.ts";
 import { ensureString } from "https://deno.land/x/unknownutil@v1.1.4/mod.ts";
 
+import { Inputs, Snippet } from "./types.ts";
+
 type Pos = {
   line: number;
   col: number;
-};
-
-type Param = {
-  name: string;
-  type: "single_line";
-} | {
-  name: string;
-  type: "multi_line";
-};
-
-type Inputs = {
-  [key: string]: { text: string | undefined } | undefined;
-};
-
-type Snippet = {
-  name?: string;
-  text?: string;
-  params: Array<Param>;
-  render: (inputs: Inputs) => string;
 };
 
 let namespace: number;
@@ -236,7 +219,9 @@ export const main = async (denops: Denops): Promise<void> => {
         fileName = await denops.call("expand", "%:t") as string;
         return Object.entries(modules[ft]).map(([name, snippet]) => {
           const info = snippet.name != null
-            ? `${snippet.name}\n\n${snippet.text ?? snippetRender(snippet, {})}`
+            ? `[${snippet.name}]\n\n${
+              snippet.text ?? snippetRender(snippet, {})
+            }`
             : snippet.text ?? snippetRender(snippet, {});
 
           return {
