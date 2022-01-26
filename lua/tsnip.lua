@@ -4,6 +4,9 @@ local plugin_name = "tsnip"
 local Input = require("nui.input")
 local event = require("nui.utils.autocmd").event
 
+local function remove_word()
+  vim.cmd('call feedkeys("\\<Esc>bcw", "n")')
+end
 
 function M.input(label)
   local input = Input({
@@ -35,6 +38,8 @@ function M.input(label)
     end,
   })
   input:mount()
+  input:map("n", "<Esc>", input.input_props.on_close, { noremap = true })
+  input:map("i", "<C-w>", remove_word, { noremap = true })
 
   input:on(event.BufLeave, function()
     vim.cmd("call denops#request('tsnip', 'close', [])")
