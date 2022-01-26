@@ -68,6 +68,18 @@ const deletePreview = async (denops: Denops) => {
   );
 };
 
+const insertSnippet = async (denops: Denops) => {
+  await denops.call(
+    "appendbufline",
+    bufnr,
+    pos.line - 1,
+    [
+      `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
+      ...snippetRender(snippet, inputs).split("\n").slice(1),
+    ],
+  );
+};
+
 export const main = async (denops: Denops): Promise<void> => {
   namespace = await denops.call(
     "nvim_create_namespace",
@@ -118,15 +130,7 @@ export const main = async (denops: Denops): Promise<void> => {
 
         await renderPreview(denops, {});
       } else {
-        await denops.call(
-          "appendbufline",
-          bufnr,
-          pos.line - 1,
-          [
-            `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
-            ...snippetRender(snippet, inputs).split("\n").slice(1),
-          ],
-        );
+        await insertSnippet(denops);
       }
     },
     submit: async (name: unknown, input: unknown): Promise<void> => {
@@ -174,16 +178,7 @@ export const main = async (denops: Denops): Promise<void> => {
         );
       } else {
         await deletePreview(denops);
-
-        await denops.call(
-          "appendbufline",
-          bufnr,
-          pos.line - 1,
-          [
-            `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
-            ...snippetRender(snippet, inputs).split("\n").slice(1),
-          ],
-        );
+        await insertSnippet(denops);
       }
     },
     changed: async (name: unknown, input: unknown): Promise<void> => {
