@@ -109,13 +109,25 @@ export const main = async (denops: Denops): Promise<void> => {
       fileName = await denops.call("expand", "%:t") as string;
       currentLine = await denops.call("getline", ".") as string;
 
-      await denops.cmd(
-        `lua require('${denops.name}').input('${
-          snippet.params[paramIndex].name
-        }')`,
-      );
+      if (snippet.params.length > 0) {
+        await denops.cmd(
+          `lua require('${denops.name}').input('${
+            snippet.params[paramIndex].name
+          }')`,
+        );
 
-      await renderPreview(denops, {});
+        await renderPreview(denops, {});
+      } else {
+        await denops.call(
+          "appendbufline",
+          bufnr,
+          pos.line - 1,
+          [
+            `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
+            ...snippetRender(snippet, inputs).split("\n").slice(1),
+          ],
+        );
+      }
     },
     submit: async (name: unknown, input: unknown): Promise<void> => {
       ensureString(name);
