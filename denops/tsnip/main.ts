@@ -50,7 +50,7 @@ const renderPreview = async (
       virt_lines: [
         [["", "Comment"]],
         [["", "Comment"]],
-        ...lines.map((line) => [[line, "Comment"]]),
+        ...lines.map((line) => [[line !== "" ? line : " ", "Comment"]]),
       ],
     },
   ) as number;
@@ -61,6 +61,7 @@ const deletePreview = async (denops: Denops) => {
 };
 
 const insertSnippet = async (denops: Denops) => {
+  await denops.cmd("redraw");
   await denops.call("appendbufline", bufnr, pos.line - 1, [
     `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
     ...snippetRender(snippet, inputs).split("\n").slice(1),
@@ -125,7 +126,6 @@ export const main = async (denops: Denops): Promise<void> => {
       if (lastExtMarkId != null) {
         await deletePreview(denops);
       }
-      await denops.cmd("redraw");
 
       const param = snippet.params[paramIndex];
       if (param.type === "single_line") {
@@ -179,10 +179,6 @@ export const main = async (denops: Denops): Promise<void> => {
           [name]: { text: input },
         });
       } else if (param.type === "multi_line") {
-        if (input.length === 1) {
-          await denops.cmd("redraw");
-        }
-
         await renderPreview(denops, {
           ...inputs,
           [name]: {
