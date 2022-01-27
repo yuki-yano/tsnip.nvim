@@ -30,10 +30,7 @@ const snippetRender = (snippet: Snippet, inputs: Inputs) => {
     fileName: {
       text: fileName,
     },
-  }).replace(
-    /^\n/,
-    "",
-  );
+  }).replace(/^\n/, "");
 };
 
 const renderPreview = async (
@@ -60,24 +57,14 @@ const renderPreview = async (
 };
 
 const deletePreview = async (denops: Denops) => {
-  await denops.call(
-    "nvim_buf_del_extmark",
-    bufnr,
-    namespace,
-    lastExtMarkId,
-  );
+  await denops.call("nvim_buf_del_extmark", bufnr, namespace, lastExtMarkId);
 };
 
 const insertSnippet = async (denops: Denops) => {
-  await denops.call(
-    "appendbufline",
-    bufnr,
-    pos.line - 1,
-    [
-      `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
-      ...snippetRender(snippet, inputs).split("\n").slice(1),
-    ],
-  );
+  await denops.call("appendbufline", bufnr, pos.line - 1, [
+    `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
+    ...snippetRender(snippet, inputs).split("\n").slice(1),
+  ]);
 };
 
 export const main = async (denops: Denops): Promise<void> => {
@@ -101,9 +88,7 @@ export const main = async (denops: Denops): Promise<void> => {
       if (modules[ft] == null) {
         modules = {
           ...modules,
-          [ft]: await import(
-            toFileUrl(`${path}/${ft}.ts`).href
-          ),
+          [ft]: await import(toFileUrl(`${path}/${ft}.ts`).href),
         };
       }
 
@@ -146,9 +131,7 @@ export const main = async (denops: Denops): Promise<void> => {
       if (param.type === "single_line") {
         inputs = {
           ...inputs,
-          [name]: {
-            text: input === "" ? undefined : input,
-          },
+          [name]: { text: input === "" ? undefined : input },
         };
 
         await renderPreview(denops, inputs);
@@ -221,9 +204,7 @@ export const main = async (denops: Denops): Promise<void> => {
         if (modules[ft] == null) {
           modules = {
             ...modules,
-            [ft]: await import(
-              toFileUrl(`${path}/${ft}.ts`).href
-            ),
+            [ft]: await import(toFileUrl(`${path}/${ft}.ts`).href),
           };
         }
 
