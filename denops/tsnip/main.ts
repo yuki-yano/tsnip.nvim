@@ -72,7 +72,7 @@ export const main = async (denops: Denops): Promise<void> => {
     "tsnip",
   ) as number;
 
-  const path = await variable.g.get<string>(denops, "tsnip#snippet_dir");
+  const path = await variable.g.get<string>(denops, "tsnip_snippet_dir");
 
   await helper.execute(
     denops,

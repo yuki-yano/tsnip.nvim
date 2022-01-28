@@ -107,7 +107,7 @@ EXAMPLE                                         *tsnip-example*
 ==============================================================================
 OPTIONS                                           *tsnip-options*
 
-*g:tsnip#snippet_dir*
+*g:tsnip_snippet_dir*
   Is specified, read snippet files from this.
   Set string of path.
 
