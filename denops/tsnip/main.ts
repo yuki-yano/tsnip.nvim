@@ -23,8 +23,6 @@ let fileName: string;
 let currentLine: string;
 let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
 
-const path = `${Deno.env.get("HOME")}/.vim/tsnip`;
-
 const snippetRender = (snippet: Snippet, inputs: Inputs) => {
   return snippet.render(inputs, {
     fileName: {
@@ -73,6 +71,8 @@ export const main = async (denops: Denops): Promise<void> => {
     "nvim_create_namespace",
     "tsnip",
   ) as number;
+
+  const path = await variable.g.get<string>(denops, "tsnip#snippet_dir");
 
   await helper.execute(
     denops,

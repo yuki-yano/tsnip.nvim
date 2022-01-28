@@ -30,7 +30,7 @@ Completion
 - ddc.vim:
     call ddc#custom#patch_global('sources', ['tsnip'])
 
-Can be used with coc.nvim or ddc.vim. Place the snippet file in
+Can be used with coc.nvim or ddc.vim. In the default, place the snippet file in
 `~/.vim/tsnip/{filetype}.ts`.
 
 ==============================================================================
@@ -104,5 +104,13 @@ EXAMPLE                                         *tsnip-example*
         }] = useState(${default_value?.text ?? ""})`,
     };
 <
+==============================================================================
+OPTIONS                                           *tsnip-options*
+
+*g:tsnip#snippet_dir*
+  Is specified, read snippet files from this.
+  Set string of path.
+
+  Default value is '~/.vim/tsnip'
 
 vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:
