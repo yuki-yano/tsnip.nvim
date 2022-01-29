@@ -40,7 +40,7 @@ call ddc#custom#patch_global('sources', ['tsnip'])
 ```typescript
 import { Snippet } from "https://deno.land/x/tsnip_vim@v0.4/mod.ts";
 
-export const state: Snippet = {
+const state: Snippet = {
   name: "useState",
   text: "const [${1:state}, set${State}] = useState(${2:default_value})",
   params: [
@@ -60,4 +60,8 @@ export const state: Snippet = {
         : ""
     }] = useState(${default_value?.text ?? ""})`,
 };
+
+export default {
+  state
+}
 ```

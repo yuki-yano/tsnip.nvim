@@ -33,6 +33,8 @@ Completion
 Can be used with coc.nvim or ddc.vim. In the default, place the snippet file in
 `~/.vim/tsnip/{filetype}.ts`.
 
+The default export in the snippet file will function as the snippet.
+
 ==============================================================================
 SNIPPET_FORMAT                                  *tsnip-snippt-format*
 
@@ -106,7 +108,7 @@ EXAMPLE                                         *tsnip-example*
 >
     import { Snippet } from "https://deno.land/x/tsnip_vim@v0.4/mod.ts";
 
-    export const state: Snippet = {
+    const state: Snippet = {
       name: "useState",
       text: "const [${1:state}, set${State}] = useState(${2:default_value})",
       params: [
@@ -126,6 +128,10 @@ EXAMPLE                                         *tsnip-example*
             : ""
         }] = useState(${default_value?.text ?? ""})`,
     };
+
+    export default {
+      state,
+    }
 <
 ==============================================================================
 OPTIONS                                           *tsnip-options*

@@ -24,7 +24,13 @@ let fileName: string;
 let fileType: string;
 let cwd: string;
 let currentLine: string;
-let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
+let modules: {
+  [fileType: string]: {
+    default: {
+      [name: string]: Snippet;
+    };
+  };
+} = {};
 
 const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
   return snippet.render(inputs, {
@@ -68,16 +74,18 @@ const loadSnippetModule = async (denops: Denops, path: string) => {
   ft = ft === "" ? "_" : ft;
 
   if (modules[ft] != null) {
-    return modules[ft];
+    return modules[ft]["default"];
   }
 
   const url = toFileUrl(`${path}/${ft}.ts`);
   modules = {
     ...modules,
-    [ft]: await exists(url.pathname) ? await import(url.href) : {},
+    [ft]: await exists(url.pathname)
+      ? { default: {}, ...await import(url.href) }
+      : { default: {} },
   };
 
-  return modules[ft];
+  return modules[ft]["default"];
 };
 
 const deletePreview = async (denops: Denops) => {
