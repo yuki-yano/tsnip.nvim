@@ -78,6 +78,29 @@ render:
 
 
 ==============================================================================
+RENDER_EXTRA_INPUT                               *tsnip-render-extra-input*
+
+The type of ExtraInput passed as the second argument of the render function.
+
+TypeDefinition:
+>
+   type ExtraInputs = {
+     fileName: { text: string };
+     fileType: { text: string };
+     cwd: { text: string };
+   };
+<
+
+Example:
+>
+   const fileNameSnippet: Snippet = {
+     params: [],
+     render(_, { fileName }) `${fileName}`
+   }
+<
+
+
+==============================================================================
 EXAMPLE                                         *tsnip-example*
 
 >

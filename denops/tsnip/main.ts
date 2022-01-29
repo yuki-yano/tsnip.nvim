@@ -20,6 +20,8 @@ let inputs: Inputs;
 let paramIndex: number;
 let lastExtMarkId: number;
 let fileName: string;
+let fileType: string;
+let cwd: string;
 let currentLine: string;
 let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
 
@@ -27,6 +29,12 @@ const snippetRender = (snippet: Snippet, inputs: Inputs) => {
   return snippet.render(inputs, {
     fileName: {
       text: fileName,
+    },
+    fileType: {
+      text: fileType,
+    },
+    cwd: {
+      text: cwd,
     },
   }).replace(/^\n/, "");
 };
@@ -105,6 +113,8 @@ export const main = async (denops: Denops): Promise<void> => {
       inputs = {};
       paramIndex = 0;
       fileName = await denops.call("expand", "%:t") as string;
+      fileType = await op.filetype.get(denops);
+      cwd = await denops.call("getcwd") as string
       currentLine = await denops.call("getline", ".") as string;
 
       if (snippet.params.length > 0) {

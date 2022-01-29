@@ -12,6 +12,8 @@ export type Inputs = {
 
 export type ExtraInputs = {
   fileName: { text: string };
+  fileType: { text: string };
+  cwd: { text: string };
 };
 
 export type Snippet = {
