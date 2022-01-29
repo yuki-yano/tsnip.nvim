@@ -104,7 +104,7 @@ Example:
 EXAMPLE                                         *tsnip-example*
 
 >
-    import { Snippet } from "https://deno.land/x/tsnip_vim@v0.2/mod.ts";
+    import { Snippet } from "https://deno.land/x/tsnip_vim@v0.4/mod.ts";
 
     export const state: Snippet = {
       name: "useState",
