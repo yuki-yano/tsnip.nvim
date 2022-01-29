@@ -95,7 +95,7 @@ Example:
 >
    const fileNameSnippet: Snippet = {
      params: [],
-     render(_, { fileName }) `${fileName}`
+     render: (_, { fileName }) => `${fileName}`
    }
 <
 
