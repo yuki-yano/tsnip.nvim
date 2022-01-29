@@ -1,3 +1,4 @@
+import { exists } from "https://deno.land/std@0.123.0/fs/mod.ts";
 import { toFileUrl } from "https://deno.land/std@0.120.0/path/mod.ts";
 import type { Denops } from "https://deno.land/x/denops_std@v2.4.0/mod.ts";
 import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
@@ -25,7 +26,7 @@ let cwd: string;
 let currentLine: string;
 let modules: { [fileType: string]: { [name: string]: Snippet } } = {};
 
-const snippetRender = (snippet: Snippet, inputs: Inputs) => {
+const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
   return snippet.render(inputs, {
     fileName: {
       text: fileName,
@@ -43,7 +44,7 @@ const renderPreview = async (
   denops: Denops,
   inputs: Inputs,
 ): Promise<void> => {
-  let lines = snippetRender(snippet, inputs).split("\n");
+  let lines = renderSnippet(snippet, inputs).split("\n");
   lines = [`${currentLine}${lines[0]}`, ...lines.slice(1)];
 
   lastExtMarkId = await denops.call(
@@ -62,6 +63,23 @@ const renderPreview = async (
   ) as number;
 };
 
+const loadSnippetModule = async (denops: Denops, path: string) => {
+  let ft = await op.filetype.get(denops);
+  ft = ft === "" ? "_" : ft;
+
+  if (modules[ft] != null) {
+    return modules[ft];
+  }
+
+  const url = toFileUrl(`${path}/${ft}.ts`);
+  modules = {
+    ...modules,
+    [ft]: await exists(url.pathname) ? await import(url.href) : {},
+  };
+
+  return modules[ft];
+};
+
 const deletePreview = async (denops: Denops) => {
   await denops.call("nvim_buf_del_extmark", bufnr, namespace, lastExtMarkId);
 };
@@ -69,8 +87,8 @@ const deletePreview = async (denops: Denops) => {
 const insertSnippet = async (denops: Denops) => {
   await denops.cmd("redraw");
   await denops.call("appendbufline", bufnr, pos.line - 1, [
-    `${currentLine}${snippetRender(snippet, inputs).split("\n")[0]}`,
-    ...snippetRender(snippet, inputs).split("\n").slice(1),
+    `${currentLine}${renderSnippet(snippet, inputs).split("\n")[0]}`,
+    ...renderSnippet(snippet, inputs).split("\n").slice(1),
   ]);
 };
 
@@ -80,7 +98,10 @@ export const main = async (denops: Denops): Promise<void> => {
     "tsnip",
   ) as number;
 
-  const path = await variable.g.get<string>(denops, "tsnip_snippet_dir");
+  const path = await variable.g.get<string>(
+    denops,
+    "tsnip_snippet_dir",
+  ) as string;
 
   await helper.execute(
     denops,
@@ -93,15 +114,8 @@ export const main = async (denops: Denops): Promise<void> => {
     execute: async (snippetName: unknown): Promise<void> => {
       ensureString(snippetName);
 
-      const ft = await op.filetype.get(denops);
-      if (modules[ft] == null) {
-        modules = {
-          ...modules,
-          [ft]: await import(toFileUrl(`${path}/${ft}.ts`).href),
-        };
-      }
-
-      snippet = modules[ft][snippetName];
+      const module = await loadSnippetModule(denops, path);
+      snippet = module[snippetName];
       bufnr = await denops.call("bufnr") as number;
       const p = await denops.call("getpos", ".") as [
         number,
@@ -114,7 +128,7 @@ export const main = async (denops: Denops): Promise<void> => {
       paramIndex = 0;
       fileName = await denops.call("expand", "%:t") as string;
       fileType = await op.filetype.get(denops);
-      cwd = await denops.call("getcwd") as string
+      cwd = await denops.call("getcwd") as string;
       currentLine = await denops.call("getline", ".") as string;
 
       if (snippet.params.length > 0) {
@@ -205,31 +219,19 @@ export const main = async (denops: Denops): Promise<void> => {
       }
     },
     items: async (): Promise<Array<{ word: string; info: string }>> => {
-      try {
-        const ft = await op.filetype.get(denops);
-        if (modules[ft] == null) {
-          modules = {
-            ...modules,
-            [ft]: await import(toFileUrl(`${path}/${ft}.ts`).href),
-          };
-        }
+      const module = await loadSnippetModule(denops, path);
+      fileName = await denops.call("expand", "%:t") as string;
 
-        fileName = await denops.call("expand", "%:t") as string;
-        return Object.entries(modules[ft]).map(([name, snippet]) => {
-          const info = snippet.name != null
-            ? `[${snippet.name}]\n\n${
-              snippet.text ?? snippetRender(snippet, {})
-            }`
-            : snippet.text ?? snippetRender(snippet, {});
+      return Object.entries(module).map(([name, snippet]) => {
+        const info = snippet.name != null
+          ? `[${snippet.name}]\n\n${snippet.text ?? renderSnippet(snippet, {})}`
+          : snippet.text ?? renderSnippet(snippet, {});
 
-          return {
-            word: name,
-            info,
-          };
-        });
-      } catch (_) {
-        return [];
-      }
+        return {
+          word: name,
+          info,
+        };
+      });
     },
   };
 };
