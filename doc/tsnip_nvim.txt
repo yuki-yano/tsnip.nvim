@@ -78,7 +78,7 @@ render:
 
 
 ==============================================================================
-RENDER_EXTRA_INPUT                               *tsnip-render-extra-input*
+RENDER_EXTRA_INPUTS                              *tsnip-render-extra-inputs*
 
 The type of ExtraInput passed as the second argument of the render function.
 
