@@ -61,8 +61,8 @@ const renderPreview = async (
     pos.col - 1,
     {
       virt_lines: [
-        [["", "Comment"]],
-        [["", "Comment"]],
+        [[" ", "Comment"]],
+        [[" ", "Comment"]],
         ...lines.map((line) => [[line !== "" ? line : " ", "Comment"]]),
       ],
     },
