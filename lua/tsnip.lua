@@ -28,13 +28,13 @@ function M.input(label)
     },
   }, {
     on_change = function(value)
-      vim.cmd("call denops#request('tsnip', 'changed', ['" .. label .. "', '" .. value ..  "'])")
+      vim.call("denops#request", "tsnip", "changed", {label, value})
     end,
     on_submit = function(value)
-      vim.cmd("call denops#request('tsnip', 'submit', ['" .. label .. "', '" .. value ..  "'])")
+      vim.call("denops#request", "tsnip", "submit", {label, value})
     end,
     on_close = function()
-      vim.cmd("call denops#request('tsnip', 'close', [])")
+      vim.call("denops#request", "tsnip", "close", {})
     end,
   })
   input:mount()
@@ -42,7 +42,7 @@ function M.input(label)
   input:map("i", "<C-w>", remove_word, { noremap = true })
 
   input:on(event.BufLeave, function()
-    vim.cmd("call denops#request('tsnip', 'close', [])")
+    vim.call("denops#request", "tsnip", "close", {})
     input:unmount()
   end)
 end
