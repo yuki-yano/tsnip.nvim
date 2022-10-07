@@ -13,7 +13,7 @@ https://user-images.githubusercontent.com/5423775/150894287-0d17e966-7cab-4953-9
 ### Required
 
 - [denops.vim](https://github.com/vim-denops/denops.vim)
-- [nui.nvim](https://github.com/MunifTanjim/nui.nvim)
+- [nui.nvim](https://github.com/MunifTanjim/nui.nvim) (optional: provides rich input UI)
 
 ## Usage
 

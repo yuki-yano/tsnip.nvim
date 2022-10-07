@@ -1,6 +1,7 @@
 import { exists } from "https://deno.land/std@0.123.0/fs/mod.ts";
 import { toFileUrl } from "https://deno.land/std@0.120.0/path/mod.ts";
 import type { Denops } from "https://deno.land/x/denops_std@v2.4.0/mod.ts";
+import * as autocmd from "https://deno.land/x/denops_std@v2.4.0/autocmd/mod.ts";
 import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
 import * as helper from "https://deno.land/x/denops_std@v2.4.0/helper/mod.ts";
 import * as op from "https://deno.land/x/denops_std@v2.4.0/option/mod.ts";
@@ -24,6 +25,7 @@ let fileName: string;
 let fileType: string;
 let cwd: string;
 let currentLine: string;
+let useNui: boolean;
 let modules: {
   [fileType: string]: {
     default: {
@@ -31,6 +33,36 @@ let modules: {
     };
   };
 } = {};
+
+// Note(@kuuote): this function must be call without `await`
+//                because adjust control flow to nui.nvim
+const prompt = async (denops: Denops, label: string) => {
+  await autocmd.group(denops, "tsnip-internal", (helper) => {
+    helper.define(
+      "CmdlineChanged",
+      "*",
+      `call denops#request("${denops.name}", "changed", ["${label}", getcmdline()])`,
+    );
+    helper.define(
+      "CmdlineChanged",
+      "*",
+      `redraw`,
+    );
+  });
+  try {
+    const result = await helper.input(denops, { prompt: label + ": " });
+    if (result != null) {
+      // ditto
+      denops.dispatch(denops.name, "submit", label, result);
+    } else {
+      await denops.dispatch(denops.name, "close");
+    }
+  } finally {
+    await autocmd.remove(denops, "CmdlineChanged", "*", {
+      group: "tsnip-internal",
+    });
+  }
+};
 
 const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
   return snippet.render(inputs, {
@@ -61,8 +93,7 @@ const renderPreview = async (
     pos.col - 1,
     {
       virt_lines: [
-        [[" ", "Comment"]],
-        [[" ", "Comment"]],
+        ...useNui ? [[[" ", "Comment"]], [[" ", "Comment"]]] : [],
         ...lines.map((line) => [[line !== "" ? line : " ", "Comment"]]),
       ],
     },
@@ -118,6 +149,8 @@ export const main = async (denops: Denops): Promise<void> => {
     `,
   );
 
+  useNui = !!await denops.call("luaeval", "pcall(require, 'nui.input')");
+
   denops.dispatcher = {
     execute: async (snippetName: unknown): Promise<void> => {
       ensureString(snippetName);
@@ -140,11 +173,15 @@ export const main = async (denops: Denops): Promise<void> => {
       currentLine = await denops.call("getline", ".") as string;
 
       if (snippet.params.length > 0) {
-        await denops.cmd(
-          `lua require('${denops.name}').input([=[${
-            snippet.params[paramIndex].name
-          }]=])`,
-        );
+        if (useNui) {
+          await denops.cmd(
+            `lua require('${denops.name}').input([=[${
+              snippet.params[paramIndex].name
+            }]=])`,
+          );
+        } else {
+          prompt(denops, snippet.params[paramIndex].name);
+        }
 
         await renderPreview(denops, {});
       } else {
@@ -186,11 +223,15 @@ export const main = async (denops: Denops): Promise<void> => {
       }
 
       if (snippet.params.length > paramIndex) {
-        await denops.cmd(
-          `lua require('${denops.name}').input([=[${
-            snippet.params[paramIndex].name
-          }]=])`,
-        );
+        if (useNui) {
+          await denops.cmd(
+            `lua require('${denops.name}').input([=[${
+              snippet.params[paramIndex].name
+            }]=])`,
+          );
+        } else {
+          prompt(denops, snippet.params[paramIndex].name);
+        }
       } else {
         await deletePreview(denops);
         await insertSnippet(denops);

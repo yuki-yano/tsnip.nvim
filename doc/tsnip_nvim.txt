@@ -2,11 +2,11 @@
 
 Plugin to expand snippets written in Pure TypeScript(Deno).
 
-This plugin depends on denops.vim and nui.nvim.
+This plugin depends on denops.vim and optional depends on nui.nvim.
 
 - denops.vim
     https://github.com/vim-denops/denops.vim
-- nui.nvim
+- nui.nvim (optional: provides rich input UI)
     https://github.com/MunifTanjim/nui.nvim
 
 To use it with completion, you need coc.nvim or ddc.vim
