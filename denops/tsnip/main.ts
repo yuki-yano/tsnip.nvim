@@ -141,9 +141,9 @@ export const main = async (denops: Denops): Promise<void> => {
 
       if (snippet.params.length > 0) {
         await denops.cmd(
-          `lua require('${denops.name}').input('${
+          `lua require('${denops.name}').input([=[${
             snippet.params[paramIndex].name
-          }')`,
+          }]=])`,
         );
 
         await renderPreview(denops, {});
@@ -187,9 +187,9 @@ export const main = async (denops: Denops): Promise<void> => {
 
       if (snippet.params.length > paramIndex) {
         await denops.cmd(
-          `lua require('${denops.name}').input('${
+          `lua require('${denops.name}').input([=[${
             snippet.params[paramIndex].name
-          }')`,
+          }]=])`,
         );
       } else {
         await deletePreview(denops);
