@@ -5,7 +5,10 @@ import * as autocmd from "https://deno.land/x/denops_std@v2.4.0/autocmd/mod.ts";
 import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
 import * as helper from "https://deno.land/x/denops_std@v2.4.0/helper/mod.ts";
 import * as op from "https://deno.land/x/denops_std@v2.4.0/option/mod.ts";
-import { ensureString } from "https://deno.land/x/unknownutil@v1.1.4/mod.ts";
+import {
+  ensureString,
+  isBoolean,
+} from "https://deno.land/x/unknownutil@v1.1.4/mod.ts";
 
 import { Inputs, Snippet } from "./types.ts";
 
@@ -149,7 +152,13 @@ export const main = async (denops: Denops): Promise<void> => {
     `,
   );
 
-  useNui = !!await denops.call("luaeval", "pcall(require, 'nui.input')");
+  const useNuiVar = await variable.g.get(denops, "tsnip_use_nui");
+
+  if (isBoolean(useNuiVar)) {
+    useNui = useNuiVar;
+  } else {
+    useNui = !!await denops.call("luaeval", "pcall(require, 'nui.input')");
+  }
 
   denops.dispatcher = {
     execute: async (snippetName: unknown): Promise<void> => {

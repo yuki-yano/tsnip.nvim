@@ -142,4 +142,9 @@ OPTIONS                                           *tsnip-options*
 
   Default value is '~/.vim/tsnip'
 
+*g:tsnip_use_nui*
+  Is v:true, always use |nui.nvim| else always use |input()|
+
+  Default value is result of `!!luaeval('pcall(require, "nui.input")')`
+
 vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:
