@@ -2,11 +2,11 @@
 
 Plugin to expand snippets written in Pure TypeScript(Deno).
 
-This plugin depends on denops.vim and nui.nvim.
+This plugin depends on denops.vim and, optionally does on nui.nvim.
 
 - denops.vim
     https://github.com/vim-denops/denops.vim
-- nui.nvim
+- nui.nvim (optional: it is used for the rich input UI.)
     https://github.com/MunifTanjim/nui.nvim
 
 To use it with completion, you need coc.nvim or ddc.vim
@@ -141,5 +141,12 @@ OPTIONS                                           *tsnip-options*
   Set string of path.
 
   Default value is '~/.vim/tsnip'
+
+*g:tsnip_use_nui*
+  If the option is set as true, then it always uses |nui.nvim|
+  else uses |input()|.
+
+  The default value is result given by
+    `!!luaeval('pcall(require, "nui.input")')`
 
 vim:tw=78:sw=2:ts=2:ft=help:norl:nowrap:
