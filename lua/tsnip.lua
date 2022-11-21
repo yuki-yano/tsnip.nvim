@@ -12,7 +12,7 @@ function M.input(label)
   local input = Input({
     relative = "cursor",
     position = {
-      row = 0,
+      row = 1,
       col = 0,
     },
     size = 40,
