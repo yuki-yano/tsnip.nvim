@@ -18,6 +18,7 @@ type Pos = {
 };
 
 let namespace: number;
+let mode: string;
 let pos: Pos;
 let bufnr: number;
 let snippet: Snippet;
@@ -127,11 +128,38 @@ const deletePreview = async (denops: Denops) => {
 };
 
 const insertSnippet = async (denops: Denops) => {
+  // Note: use virtualedit to allow placing cursor for end of line at case of insert mode
+  const saveVirtualedit = await op.virtualedit.getLocal(denops);
+  const saveReg = await denops.call("getreginfo", "z");
+  try {
+    const resultString = renderSnippet(snippet, inputs);
+    const result = resultString.split("\n");
+    if (mode === "n") {
+      await denops.call("setreg", "z", result, "V");
+      await denops.cmd('normal! "z[P');
+    } else if (mode === "i") {
+      await op.virtualedit.setLocal(denops, "all");
+      const indent = currentLine.replace(/\S.*$/, "");
+      await denops.call(
+        "setreg",
+        "z",
+        [result[0]].concat(result.slice(1).map((s) => indent + s)),
+        "v",
+      );
+      await denops.call("cursor", [pos.line, pos.col]);
+      await denops.cmd('normal! "zgP');
+
+      // re-format tab for indent included snippets
+      await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
+
+      // restart insert
+      await denops.cmd("startinsert");
+    }
+  } finally {
+    await op.virtualedit.setLocal(denops, saveVirtualedit);
+    await denops.call("setreg", "z", saveReg);
+  }
   await denops.cmd("redraw");
-  await denops.call("appendbufline", bufnr, pos.line - 1, [
-    `${currentLine}${renderSnippet(snippet, inputs).split("\n")[0]}`,
-    ...renderSnippet(snippet, inputs).split("\n").slice(1),
-  ]);
 };
 
 export const main = async (denops: Denops): Promise<void> => {
@@ -173,6 +201,7 @@ export const main = async (denops: Denops): Promise<void> => {
         number,
         number,
       ];
+      mode = await denops.call("mode") as string;
       pos = { line: p[1], col: p[2] };
       inputs = {};
       paramIndex = 0;
