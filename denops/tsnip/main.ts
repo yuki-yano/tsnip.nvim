@@ -49,7 +49,7 @@ const prompt = async (denops: Denops, label: string) => {
     helper.define(
       "CmdlineChanged",
       "*",
-      `redraw`,
+      `redraw!`,
     );
   });
   try {
