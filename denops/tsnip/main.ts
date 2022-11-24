@@ -1,14 +1,14 @@
-import { exists } from "https://deno.land/std@0.123.0/fs/mod.ts";
-import { toFileUrl } from "https://deno.land/std@0.120.0/path/mod.ts";
-import type { Denops } from "https://deno.land/x/denops_std@v2.4.0/mod.ts";
-import * as autocmd from "https://deno.land/x/denops_std@v2.4.0/autocmd/mod.ts";
-import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
-import * as helper from "https://deno.land/x/denops_std@v2.4.0/helper/mod.ts";
-import * as op from "https://deno.land/x/denops_std@v2.4.0/option/mod.ts";
+import { exists } from "https://deno.land/std@0.165.0/fs/mod.ts";
+import { toFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
+import type { Denops } from "https://deno.land/x/denops_std@v3.9.3/mod.ts";
+import * as autocmd from "https://deno.land/x/denops_std@v3.9.3/autocmd/mod.ts";
+import * as variable from "https://deno.land/x/denops_std@v3.9.3/variable/mod.ts";
+import * as helper from "https://deno.land/x/denops_std@v3.9.3/helper/mod.ts";
+import * as op from "https://deno.land/x/denops_std@v3.9.3/option/mod.ts";
 import {
-  ensureString,
+  assertString,
   isBoolean,
-} from "https://deno.land/x/unknownutil@v1.1.4/mod.ts";
+} from "https://deno.land/x/unknownutil@v2.1.0/mod.ts";
 
 import { Inputs, Snippet } from "./types.ts";
 
@@ -162,7 +162,7 @@ export const main = async (denops: Denops): Promise<void> => {
 
   denops.dispatcher = {
     execute: async (snippetName: unknown): Promise<void> => {
-      ensureString(snippetName);
+      assertString(snippetName);
 
       const module = await loadSnippetModule(denops, path);
       snippet = module[snippetName];
@@ -198,8 +198,8 @@ export const main = async (denops: Denops): Promise<void> => {
       }
     },
     submit: async (name: unknown, input: unknown): Promise<void> => {
-      ensureString(name);
-      ensureString(input);
+      assertString(name);
+      assertString(input);
 
       if (lastExtMarkId != null) {
         await deletePreview(denops);
@@ -247,8 +247,8 @@ export const main = async (denops: Denops): Promise<void> => {
       }
     },
     changed: async (name: unknown, input: unknown): Promise<void> => {
-      ensureString(name);
-      ensureString(input);
+      assertString(name);
+      assertString(input);
 
       if (lastExtMarkId != null) {
         await deletePreview(denops);
