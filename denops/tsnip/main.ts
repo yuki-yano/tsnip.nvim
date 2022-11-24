@@ -29,6 +29,8 @@ let fileName: string;
 let fileType: string;
 let cwd: string;
 let currentLine: string;
+let beforeCursor: string;
+let afterCursor: string;
 let useNui: boolean;
 let modules: {
   [fileType: string]: {
@@ -86,8 +88,8 @@ const renderPreview = async (
   denops: Denops,
   inputs: Inputs,
 ): Promise<void> => {
-  let lines = renderSnippet(snippet, inputs).split("\n");
-  lines = [`${currentLine}${lines[0]}`, ...lines.slice(1)];
+  const preview = beforeCursor + renderSnippet(snippet, inputs) + afterCursor;
+  const lines = preview.split("\n");
 
   lastExtMarkId = await denops.call(
     "nvim_buf_set_extmark",
@@ -209,6 +211,19 @@ export const main = async (denops: Denops): Promise<void> => {
       fileType = await op.filetype.get(denops);
       cwd = await denops.call("getcwd") as string;
       currentLine = await denops.call("getline", ".") as string;
+
+      if (mode === "i") {
+        beforeCursor = currentLine.slice(
+          0,
+          new TextDecoder().decode(
+            new TextEncoder().encode(currentLine).slice(0, pos.col - 1),
+          ).length,
+        );
+        afterCursor = currentLine.slice(beforeCursor.length);
+      } else {
+        beforeCursor = "";
+        afterCursor = "";
+      }
 
       if (snippet.params.length > 0) {
         if (useNui) {
