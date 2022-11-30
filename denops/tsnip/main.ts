@@ -40,6 +40,8 @@ let modules: {
   };
 } = {};
 
+const CURSOR_MARKER = "__tsnip_cursor_marker__";
+
 // Note(@kuuote): this function must be call without `await`
 //                because adjust control flow to nui.nvim
 const prompt = async (denops: Denops, label: string) => {
@@ -81,6 +83,7 @@ const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
     cwd: {
       text: cwd,
     },
+    postCursor: CURSOR_MARKER,
   }).replace(/^\n/, "");
 };
 
@@ -89,7 +92,7 @@ const renderPreview = async (
   inputs: Inputs,
 ): Promise<void> => {
   const preview = beforeCursor + renderSnippet(snippet, inputs) + afterCursor;
-  const lines = preview.split("\n");
+  const lines = preview.replace(CURSOR_MARKER, "|").split("\n");
 
   lastExtMarkId = await denops.call(
     "nvim_buf_set_extmark",
@@ -133,14 +136,15 @@ const insertSnippet = async (denops: Denops) => {
   // Note: use virtualedit to allow placing cursor for end of line at case of insert mode
   const saveVirtualedit = await op.virtualedit.getLocal(denops);
   const saveReg = await denops.call("getreginfo", "z");
+  await op.virtualedit.setLocal(denops, "all");
   try {
     const resultString = renderSnippet(snippet, inputs);
+    const hasCursor = resultString.indexOf(CURSOR_MARKER) !== -1;
     const result = resultString.split("\n");
     if (mode === "n") {
       await denops.call("setreg", "z", result, "V");
       await denops.cmd('normal! "z[P');
     } else if (mode === "i") {
-      await op.virtualedit.setLocal(denops, "all");
       const indent = currentLine.replace(/\S.*$/, "");
       await denops.call(
         "setreg",
@@ -150,12 +154,18 @@ const insertSnippet = async (denops: Denops) => {
       );
       await denops.call("cursor", [pos.line, pos.col]);
       await denops.cmd('normal! "zgP');
+      await denops.call("cursor", [pos.line, pos.col]);
 
       // re-format tab for indent included snippets
       await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
-
-      // restart insert
+    }
+    if (hasCursor) {
+      await denops.call("search", CURSOR_MARKER);
+      await denops.cmd('normal! "_d' + CURSOR_MARKER.length + "l");
       await denops.cmd("startinsert");
+    } else {
+      await denops.call("cursor", [pos.line, 1]);
+      await denops.cmd("stopinsert");
     }
   } finally {
     await op.virtualedit.setLocal(denops, saveVirtualedit);
