@@ -91,8 +91,12 @@ const renderPreview = async (
   denops: Denops,
   inputs: Inputs,
 ): Promise<void> => {
-  const preview = beforeCursorText.trimStart() + renderSnippet(snippet, inputs) + afterCursorText;
-  const lines = preview.replace(CURSOR_MARKER, "|").split("\n");
+  const indent = beforeCursorText.replace(/\S.*$/, "");
+  const preview = beforeCursorText.trimStart() +
+    renderSnippet(snippet, inputs) + afterCursorText;
+  const lines = preview.replace(CURSOR_MARKER, "|")
+    .split("\n")
+    .map((line) => indent + line);
 
   lastExtMarkId = await denops.call(
     "nvim_buf_set_extmark",
