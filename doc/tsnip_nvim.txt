@@ -80,16 +80,17 @@ render:
 
 
 ==============================================================================
-RENDER_EXTRA_INPUTS                              *tsnip-render-extra-inputs*
+RENDER_CONTEXT                                        *tsnip-render-context*
 
-The type of ExtraInput passed as the second argument of the render function.
+The type of Context passed as the second argument of the render function.
 
 TypeDefinition:
 >
-   type ExtraInputs = {
+   type Context = {
      fileName: { text: string };
      fileType: { text: string };
      cwd: { text: string };
+     postCursor: string;
    };
 <
 
@@ -100,7 +101,16 @@ Example:
      render: (_, { fileName }) => `${fileName}`
    }
 <
+postCursor is unique text, cursor will jump to there and start insert mode.
 
+Example:
+>
+   const cursorSnippet: Snippet = {
+     params: [],
+     render: (_, { postCursor }) => `console.log(${postCursor})`
+   }
+<
+above snippet will expand to `console.log(|)`. (cursor jump to `|`)
 
 ==============================================================================
 EXAMPLE                                         *tsnip-example*
