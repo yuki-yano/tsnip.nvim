@@ -18,7 +18,6 @@ type Pos = {
 };
 
 let namespace: number;
-let mode: string;
 let pos: Pos;
 let bufnr: number;
 let snippet: Snippet;
@@ -145,24 +144,19 @@ const insertSnippet = async (denops: Denops) => {
     const resultString = renderSnippet(snippet, inputs);
     const hasCursor = resultString.indexOf(CURSOR_MARKER) !== -1;
     const result = resultString.split("\n");
-    if (mode === "n") {
-      await denops.call("setreg", "z", result, "V");
-      await denops.cmd('normal! "z[P');
-    } else if (mode === "i") {
-      const indent = currentLine.replace(/\S.*$/, "");
-      await denops.call(
-        "setreg",
-        "z",
-        [result[0]].concat(result.slice(1).map((s) => indent + s)),
-        "v",
-      );
-      await denops.call("cursor", [pos.line, pos.col]);
-      await denops.cmd('normal! "zgP');
-      await denops.call("cursor", [pos.line, pos.col]);
 
-      // re-format tab for indent included snippets
-      await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
-    }
+    const indent = currentLine.replace(/\S.*$/, "");
+    await denops.call(
+      "setreg",
+      "z",
+      [result[0]].concat(result.slice(1).map((s) => indent + s)),
+      "v",
+    );
+    await denops.call("cursor", [pos.line, pos.col]);
+    await denops.cmd('normal! "zgP');
+
+    // re-format tab for indent included snippets
+    await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
     if (hasCursor) {
       await denops.call("search", CURSOR_MARKER);
       await denops.cmd('normal! "_d' + CURSOR_MARKER.length + "l");
@@ -217,7 +211,6 @@ export const main = async (denops: Denops): Promise<void> => {
         number,
         number,
       ];
-      mode = await denops.call("mode") as string;
       pos = { line: p[1], col: p[2] };
       inputs = {};
       paramIndex = 0;
@@ -226,18 +219,13 @@ export const main = async (denops: Denops): Promise<void> => {
       cwd = await denops.call("getcwd") as string;
       currentLine = await denops.call("getline", ".") as string;
 
-      if (mode === "i") {
-        beforeCursorText = currentLine.slice(
-          0,
-          new TextDecoder().decode(
-            new TextEncoder().encode(currentLine).slice(0, pos.col - 1),
-          ).length,
-        );
-        afterCursorText = currentLine.slice(beforeCursorText.length);
-      } else {
-        beforeCursorText = "";
-        afterCursorText = "";
-      }
+      beforeCursorText = currentLine.slice(
+        0,
+        new TextDecoder().decode(
+          new TextEncoder().encode(currentLine).slice(0, pos.col - 1),
+        ).length,
+      );
+      afterCursorText = currentLine.slice(beforeCursorText.length);
 
       if (snippet.params.length > 0) {
         if (useNui) {
