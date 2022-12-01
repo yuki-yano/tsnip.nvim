@@ -29,8 +29,8 @@ let fileName: string;
 let fileType: string;
 let cwd: string;
 let currentLine: string;
-let beforeCursor: string;
-let afterCursor: string;
+let beforeCursorText: string;
+let afterCursorText: string;
 let useNui: boolean;
 let modules: {
   [fileType: string]: {
@@ -91,7 +91,7 @@ const renderPreview = async (
   denops: Denops,
   inputs: Inputs,
 ): Promise<void> => {
-  const preview = beforeCursor + renderSnippet(snippet, inputs) + afterCursor;
+  const preview = beforeCursorText.trimStart() + renderSnippet(snippet, inputs) + afterCursorText;
   const lines = preview.replace(CURSOR_MARKER, "|").split("\n");
 
   lastExtMarkId = await denops.call(
@@ -223,16 +223,16 @@ export const main = async (denops: Denops): Promise<void> => {
       currentLine = await denops.call("getline", ".") as string;
 
       if (mode === "i") {
-        beforeCursor = currentLine.slice(
+        beforeCursorText = currentLine.slice(
           0,
           new TextDecoder().decode(
             new TextEncoder().encode(currentLine).slice(0, pos.col - 1),
           ).length,
         );
-        afterCursor = currentLine.slice(beforeCursor.length);
+        afterCursorText = currentLine.slice(beforeCursorText.length);
       } else {
-        beforeCursor = "";
-        afterCursor = "";
+        beforeCursorText = "";
+        afterCursorText = "";
       }
 
       if (snippet.params.length > 0) {
