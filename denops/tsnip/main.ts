@@ -158,6 +158,7 @@ const insertSnippet = async (denops: Denops) => {
     // re-format tab for indent included snippets
     await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
     if (hasCursor) {
+      await denops.call("cursor", [pos.line, pos.col]);
       await denops.call("search", CURSOR_MARKER);
       await denops.cmd('normal! "_d' + CURSOR_MARKER.length + "l");
       await denops.cmd("startinsert");
