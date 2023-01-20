@@ -2,8 +2,8 @@ import {
   BaseSource,
   GatherArguments,
   OnCompleteDoneArguments,
-} from "https://deno.land/x/ddc_vim@v3.1.0/base/source.ts";
-import { Item } from "https://deno.land/x/ddc_vim@v3.1.0/types.ts";
+} from "https://deno.land/x/ddc_vim@v3.2.0/base/source.ts";
+import { Item } from "https://deno.land/x/ddc_vim@v3.2.0/types.ts";
 
 export type CompletionMetadata = {
   word: string;

@@ -1,14 +1,14 @@
-import { exists } from "https://deno.land/std@0.123.0/fs/mod.ts";
-import { toFileUrl } from "https://deno.land/std@0.120.0/path/mod.ts";
-import type { Denops } from "https://deno.land/x/denops_std@v2.4.0/mod.ts";
-import * as autocmd from "https://deno.land/x/denops_std@v2.4.0/autocmd/mod.ts";
-import * as variable from "https://deno.land/x/denops_std@v2.4.0/variable/mod.ts";
-import * as helper from "https://deno.land/x/denops_std@v2.4.0/helper/mod.ts";
-import * as op from "https://deno.land/x/denops_std@v2.4.0/option/mod.ts";
+import { exists } from "https://deno.land/std@0.165.0/fs/mod.ts";
+import { toFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
+import type { Denops } from "https://deno.land/x/denops_std@v3.9.3/mod.ts";
+import * as autocmd from "https://deno.land/x/denops_std@v3.9.3/autocmd/mod.ts";
+import * as variable from "https://deno.land/x/denops_std@v3.9.3/variable/mod.ts";
+import * as helper from "https://deno.land/x/denops_std@v3.9.3/helper/mod.ts";
+import * as op from "https://deno.land/x/denops_std@v3.9.3/option/mod.ts";
 import {
-  ensureString,
+  assertString,
   isBoolean,
-} from "https://deno.land/x/unknownutil@v1.1.4/mod.ts";
+} from "https://deno.land/x/unknownutil@v2.1.0/mod.ts";
 
 import { Inputs, Snippet } from "./types.ts";
 
@@ -28,6 +28,8 @@ let fileName: string;
 let fileType: string;
 let cwd: string;
 let currentLine: string;
+let beforeCursorText: string;
+let afterCursorText: string;
 let useNui: boolean;
 let modules: {
   [fileType: string]: {
@@ -36,6 +38,8 @@ let modules: {
     };
   };
 } = {};
+
+const CURSOR_MARKER = "__tsnip_cursor_marker__";
 
 // Note(@kuuote): this function must be call without `await`
 //                because adjust control flow to nui.nvim
@@ -78,6 +82,7 @@ const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
     cwd: {
       text: cwd,
     },
+    postCursor: CURSOR_MARKER,
   }).replace(/^\n/, "");
 };
 
@@ -85,8 +90,12 @@ const renderPreview = async (
   denops: Denops,
   inputs: Inputs,
 ): Promise<void> => {
-  let lines = renderSnippet(snippet, inputs).split("\n");
-  lines = [`${currentLine}${lines[0]}`, ...lines.slice(1)];
+  const indent = beforeCursorText.replace(/\S.*$/, "");
+  const preview = beforeCursorText.trimStart() +
+    renderSnippet(snippet, inputs) + afterCursorText;
+  const lines = preview.replace(CURSOR_MARKER, "|")
+    .split("\n")
+    .map((line) => indent + line);
 
   lastExtMarkId = await denops.call(
     "nvim_buf_set_extmark",
@@ -127,11 +136,41 @@ const deletePreview = async (denops: Denops) => {
 };
 
 const insertSnippet = async (denops: Denops) => {
+  // Note: use virtualedit to allow placing cursor for end of line at case of insert mode
+  const saveVirtualedit = await op.virtualedit.getLocal(denops);
+  const saveReg = await denops.call("getreginfo", "z");
+  await op.virtualedit.setLocal(denops, "all");
+  try {
+    const resultString = renderSnippet(snippet, inputs);
+    const hasCursor = resultString.indexOf(CURSOR_MARKER) !== -1;
+    const result = resultString.split("\n");
+
+    const indent = currentLine.replace(/\S.*$/, "");
+    await denops.call(
+      "setreg",
+      "z",
+      [result[0]].concat(result.slice(1).map((s) => indent + s)),
+      "v",
+    );
+    await denops.call("cursor", [pos.line, pos.col]);
+    await denops.cmd('normal! "zgP');
+
+    // re-format tab for indent included snippets
+    await denops.cmd(`${pos.line},${pos.line + result.length - 1}retab!`);
+    if (hasCursor) {
+      await denops.call("cursor", [pos.line, pos.col]);
+      await denops.call("search", CURSOR_MARKER);
+      await denops.cmd('normal! "_d' + CURSOR_MARKER.length + "l");
+      await denops.cmd("startinsert");
+    } else {
+      await denops.call("cursor", [pos.line, 1]);
+      await denops.cmd("stopinsert");
+    }
+  } finally {
+    await op.virtualedit.setLocal(denops, saveVirtualedit);
+    await denops.call("setreg", "z", saveReg);
+  }
   await denops.cmd("redraw");
-  await denops.call("appendbufline", bufnr, pos.line - 1, [
-    `${currentLine}${renderSnippet(snippet, inputs).split("\n")[0]}`,
-    ...renderSnippet(snippet, inputs).split("\n").slice(1),
-  ]);
 };
 
 export const main = async (denops: Denops): Promise<void> => {
@@ -162,7 +201,7 @@ export const main = async (denops: Denops): Promise<void> => {
 
   denops.dispatcher = {
     execute: async (snippetName: unknown): Promise<void> => {
-      ensureString(snippetName);
+      assertString(snippetName);
 
       const module = await loadSnippetModule(denops, path);
       snippet = module[snippetName];
@@ -181,6 +220,14 @@ export const main = async (denops: Denops): Promise<void> => {
       cwd = await denops.call("getcwd") as string;
       currentLine = await denops.call("getline", ".") as string;
 
+      beforeCursorText = currentLine.slice(
+        0,
+        new TextDecoder().decode(
+          new TextEncoder().encode(currentLine).slice(0, pos.col - 1),
+        ).length,
+      );
+      afterCursorText = currentLine.slice(beforeCursorText.length);
+
       if (snippet.params.length > 0) {
         if (useNui) {
           await denops.cmd(
@@ -198,8 +245,8 @@ export const main = async (denops: Denops): Promise<void> => {
       }
     },
     submit: async (name: unknown, input: unknown): Promise<void> => {
-      ensureString(name);
-      ensureString(input);
+      assertString(name);
+      assertString(input);
 
       if (lastExtMarkId != null) {
         await deletePreview(denops);
@@ -247,8 +294,8 @@ export const main = async (denops: Denops): Promise<void> => {
       }
     },
     changed: async (name: unknown, input: unknown): Promise<void> => {
-      ensureString(name);
-      ensureString(input);
+      assertString(name);
+      assertString(input);
 
       if (lastExtMarkId != null) {
         await deletePreview(denops);
