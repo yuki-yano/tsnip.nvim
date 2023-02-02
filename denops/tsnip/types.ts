@@ -1,14 +1,29 @@
-export type Param = {
-  name: string;
-  type: "single_line";
-} | {
-  name: string;
-  type: "multi_line";
-};
+type UnionToIntersection<U> =
+  (U extends unknown ? (k: U) => void : never) extends ((k: infer I) => void)
+    ? I
+    : never;
 
-export type Inputs = {
-  [key: string]: { text: string | undefined } | undefined;
+type UnionInput<T> = T extends ReadonlyArray<infer U>
+  ? U extends SingleLineInput<infer K> | MultiLineInput<infer K> ? {
+      [key in K]: U extends SingleLineInput<string> ? { text: string }
+        : U extends MultiLineInput<string> ? { text: Array<string> }
+        : never;
+    }
+  : never
+  : never;
+
+export type Params = ReadonlyArray<
+  SingleLineInput<string> | MultiLineInput<string>
+>;
+export type SingleLineInput<K extends string> = {
+  readonly name: K;
+  readonly type: "single_line";
 };
+export type MultiLineInput<K extends string> = {
+  readonly name: K;
+  readonly type: "multi_line";
+};
+export type Inputs<T = Params> = UnionToIntersection<UnionInput<T>>;
 
 export type Context = {
   fileName: { text: string };
@@ -17,9 +32,9 @@ export type Context = {
   postCursor: string;
 };
 
-export type Snippet = {
+export type Snippet<T extends Params = Params> = {
   name?: string;
   text?: string;
-  params: Array<Param>;
-  render: (inputs: Inputs, extraInputs: Context) => string;
+  params: T;
+  render: (inputs: Inputs<T>, extraInputs: Context) => string;
 };

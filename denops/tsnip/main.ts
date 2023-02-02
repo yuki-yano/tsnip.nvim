@@ -217,6 +217,14 @@ export const main = async (denops: Denops): Promise<void> => {
       ];
       pos = { line: p[1], col: p[2] };
       inputs = {};
+      for (const param of snippet.params) {
+        inputs[param.name] = param.type === "single_line"
+          // deno-lint-ignore no-explicit-any
+          ? { text: "" } as any
+          // deno-lint-ignore no-explicit-any
+          : { text: [] } as any;
+      }
+
       paramIndex = 0;
       fileName = (await denops.call("expand", "%:t")) as string;
       fileType = await op.filetype.get(denops);
@@ -244,7 +252,7 @@ export const main = async (denops: Denops): Promise<void> => {
         }
         multiLineCurrentCount += 1;
 
-        await renderPreview(denops, {});
+        await renderPreview(denops, inputs);
       } else {
         await insertSnippet(denops);
       }
@@ -261,8 +269,9 @@ export const main = async (denops: Denops): Promise<void> => {
       if (param.type === "single_line") {
         inputs = {
           ...inputs,
-          [name]: { text: input === "" ? undefined : input },
-        };
+          [name]: { text: input },
+          // deno-lint-ignore no-explicit-any
+        } as any;
 
         await renderPreview(denops, inputs);
         paramIndex += 1;
@@ -275,10 +284,11 @@ export const main = async (denops: Denops): Promise<void> => {
             ...inputs,
             [name]: {
               text: inputs[name]?.text == null
-                ? input
-                : `${inputs[name]?.text}\n${input}`,
+                ? [input]
+                : [...inputs[name]?.text, input],
             },
-          };
+            // deno-lint-ignore no-explicit-any
+          } as any;
         }
 
         await renderPreview(denops, inputs);
@@ -313,15 +323,17 @@ export const main = async (denops: Denops): Promise<void> => {
       if (param.type === "single_line") {
         await renderPreview(denops, {
           ...inputs,
-          [name]: { text: input },
+          // deno-lint-ignore no-explicit-any
+          [name]: { text: input } as any,
         });
       } else if (param.type === "multi_line") {
         await renderPreview(denops, {
           ...inputs,
           [name]: {
             text: inputs[name]?.text == null
-              ? input
-              : `${inputs[name]?.text}\n${input}`,
+              ? [input]
+              // deno-lint-ignore no-explicit-any
+              : [...inputs[name]?.text, input] as any,
           },
         });
       }
