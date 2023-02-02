@@ -38,10 +38,18 @@ let modules: {
     };
   };
 } = {};
+let multiLineCurrentCount = 1;
 
 const CURSOR_MARKER = "__tsnip_cursor_marker__";
 
-// Note(@kuuote): this function must be call without `await`
+const nuiInputLabel = (snippet: Snippet) =>
+  snippet.params[paramIndex].type === "single_line"
+    ? snippet.params[paramIndex].name
+    : `${
+      snippet.params[paramIndex].name
+    } [${multiLineCurrentCount}] (multi line)`;
+
+// Note: (@kuuote): this function must be call without `await`
 //                because adjust control flow to nui.nvim
 const prompt = async (denops: Denops, label: string) => {
   await autocmd.group(denops, "tsnip-internal", (helper) => {
@@ -50,11 +58,7 @@ const prompt = async (denops: Denops, label: string) => {
       "*",
       `call denops#request("${denops.name}", "changed", ["${label}", getcmdline()])`,
     );
-    helper.define(
-      "CmdlineChanged",
-      "*",
-      `redraw!`,
-    );
+    helper.define("CmdlineChanged", "*", `redraw!`);
   });
   try {
     const result = await helper.input(denops, { prompt: label + ": " });
@@ -72,32 +76,33 @@ const prompt = async (denops: Denops, label: string) => {
 };
 
 const renderSnippet = (snippet: Snippet, inputs: Inputs) => {
-  return snippet.render(inputs, {
-    fileName: {
-      text: fileName,
-    },
-    fileType: {
-      text: fileType,
-    },
-    cwd: {
-      text: cwd,
-    },
-    postCursor: CURSOR_MARKER,
-  }).replace(/^\n/, "");
+  return snippet
+    .render(inputs, {
+      fileName: {
+        text: fileName,
+      },
+      fileType: {
+        text: fileType,
+      },
+      cwd: {
+        text: cwd,
+      },
+      postCursor: CURSOR_MARKER,
+    })
+    .replace(/^\n/, "");
 };
 
-const renderPreview = async (
-  denops: Denops,
-  inputs: Inputs,
-): Promise<void> => {
+const renderPreview = async (denops: Denops, inputs: Inputs): Promise<void> => {
   const indent = beforeCursorText.replace(/\S.*$/, "");
   const preview = beforeCursorText.trimStart() +
-    renderSnippet(snippet, inputs) + afterCursorText;
-  const lines = preview.replace(CURSOR_MARKER, "|")
+    renderSnippet(snippet, inputs) +
+    afterCursorText;
+  const lines = preview
+    .replace(CURSOR_MARKER, "|")
     .split("\n")
     .map((line) => indent + line);
 
-  lastExtMarkId = await denops.call(
+  lastExtMarkId = (await denops.call(
     "nvim_buf_set_extmark",
     bufnr,
     namespace,
@@ -105,11 +110,11 @@ const renderPreview = async (
     pos.col - 1,
     {
       virt_lines: [
-        ...useNui ? [[[" ", "Comment"]], [[" ", "Comment"]]] : [],
+        ...(useNui ? [[[" ", "Comment"]], [[" ", "Comment"]]] : []),
         ...lines.map((line) => [[line !== "" ? line : " ", "Comment"]]),
       ],
     },
-  ) as number;
+  )) as number;
 };
 
 const loadSnippetModule = async (denops: Denops, path: string) => {
@@ -123,8 +128,8 @@ const loadSnippetModule = async (denops: Denops, path: string) => {
   const url = toFileUrl(`${path}/${ft}.ts`);
   modules = {
     ...modules,
-    [ft]: await exists(url.pathname)
-      ? { default: {}, ...await import(url.href) }
+    [ft]: (await exists(url.pathname))
+      ? { default: {}, ...(await import(url.href)) }
       : { default: {} },
   };
 
@@ -174,15 +179,12 @@ const insertSnippet = async (denops: Denops) => {
 };
 
 export const main = async (denops: Denops): Promise<void> => {
-  namespace = await denops.call(
-    "nvim_create_namespace",
-    "tsnip",
-  ) as number;
+  namespace = (await denops.call("nvim_create_namespace", "tsnip")) as number;
 
-  const path = await variable.g.get<string>(
+  const path = (await variable.g.get<string>(
     denops,
     "tsnip_snippet_dir",
-  ) as string;
+  )) as string;
 
   await helper.execute(
     denops,
@@ -196,17 +198,18 @@ export const main = async (denops: Denops): Promise<void> => {
   if (isBoolean(useNuiVar)) {
     useNui = useNuiVar;
   } else {
-    useNui = !!await denops.call("luaeval", "pcall(require, 'nui.input')");
+    useNui = !!(await denops.call("luaeval", "pcall(require, 'nui.input')"));
   }
 
   denops.dispatcher = {
     execute: async (snippetName: unknown): Promise<void> => {
+      multiLineCurrentCount = 1;
       assertString(snippetName);
 
       const module = await loadSnippetModule(denops, path);
       snippet = module[snippetName];
-      bufnr = await denops.call("bufnr") as number;
-      const p = await denops.call("getpos", ".") as [
+      bufnr = (await denops.call("bufnr")) as number;
+      const p = (await denops.call("getpos", ".")) as [
         number,
         number,
         number,
@@ -215,10 +218,10 @@ export const main = async (denops: Denops): Promise<void> => {
       pos = { line: p[1], col: p[2] };
       inputs = {};
       paramIndex = 0;
-      fileName = await denops.call("expand", "%:t") as string;
+      fileName = (await denops.call("expand", "%:t")) as string;
       fileType = await op.filetype.get(denops);
-      cwd = await denops.call("getcwd") as string;
-      currentLine = await denops.call("getline", ".") as string;
+      cwd = (await denops.call("getcwd")) as string;
+      currentLine = (await denops.call("getline", ".")) as string;
 
       beforeCursorText = currentLine.slice(
         0,
@@ -231,13 +234,15 @@ export const main = async (denops: Denops): Promise<void> => {
       if (snippet.params.length > 0) {
         if (useNui) {
           await denops.cmd(
-            `lua require('${denops.name}').input([=[${
-              snippet.params[paramIndex].name
-            }]=])`,
+            `lua require('${denops.name}').input({
+              name = [=[${snippet.params[paramIndex].name}]=],
+              label = [=[${nuiInputLabel(snippet)}]=],
+            })`,
           );
         } else {
           prompt(denops, snippet.params[paramIndex].name);
         }
+        multiLineCurrentCount += 1;
 
         await renderPreview(denops, {});
       } else {
@@ -264,6 +269,7 @@ export const main = async (denops: Denops): Promise<void> => {
       } else if (param.type === "multi_line") {
         if (input === "") {
           paramIndex += 1;
+          multiLineCurrentCount = 1;
         } else {
           inputs = {
             ...inputs,
@@ -281,13 +287,15 @@ export const main = async (denops: Denops): Promise<void> => {
       if (snippet.params.length > paramIndex) {
         if (useNui) {
           await denops.cmd(
-            `lua require('${denops.name}').input([=[${
-              snippet.params[paramIndex].name
-            }]=])`,
+            `lua require('${denops.name}').input({
+              name = [=[${snippet.params[paramIndex].name}]=],
+              label = [=[${nuiInputLabel(snippet)}]=],
+            })`,
           );
         } else {
           prompt(denops, snippet.params[paramIndex].name);
         }
+        multiLineCurrentCount += 1;
       } else {
         await deletePreview(denops);
         await insertSnippet(denops);
@@ -325,7 +333,7 @@ export const main = async (denops: Denops): Promise<void> => {
     },
     items: async (): Promise<Array<{ word: string; info: string }>> => {
       const module = await loadSnippetModule(denops, path);
-      fileName = await denops.call("expand", "%:t") as string;
+      fileName = (await denops.call("expand", "%:t")) as string;
 
       return Object.entries(module).map(([name, snippet]) => {
         const info = snippet.name != null
