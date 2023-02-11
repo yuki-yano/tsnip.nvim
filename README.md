@@ -38,7 +38,7 @@ call ddc#custom#patch_global('sources', ['tsnip'])
 `~/.vim/tsnip/typescriptreact.ts`
 
 ```typescript
-import { Snippet } from "https://deno.land/x/tsnip_vim@v0.4/mod.ts";
+import { Snippet } from "https://deno.land/x/tsnip_vim@v0.5/mod.ts";
 
 const state: Snippet = {
   name: "useState",
