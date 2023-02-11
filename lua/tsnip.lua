@@ -23,7 +23,7 @@ function M.input(opt)
       style = 'rounded',
       text = {
         top = label,
-        top_align = 'left',
+        top_align = 'center',
       },
     },
     win_options = {
