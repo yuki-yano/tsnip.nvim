@@ -1,5 +1,4 @@
-import { exists } from "https://deno.land/std@0.165.0/fs/mod.ts";
-import { toFileUrl } from "https://deno.land/std@0.165.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.165.0/path/mod.ts";
 import type { Denops } from "https://deno.land/x/denops_std@v3.9.3/mod.ts";
 import * as autocmd from "https://deno.land/x/denops_std@v3.9.3/autocmd/mod.ts";
 import * as variable from "https://deno.land/x/denops_std@v3.9.3/variable/mod.ts";
@@ -117,7 +116,7 @@ const renderPreview = async (denops: Denops, inputs: Inputs): Promise<void> => {
   )) as number;
 };
 
-const loadSnippetModule = async (denops: Denops, path: string) => {
+const loadSnippetModule = async (denops: Denops, uri: string) => {
   let ft = await op.filetype.get(denops);
   ft = ft === "" ? "_" : ft;
 
@@ -125,13 +124,18 @@ const loadSnippetModule = async (denops: Denops, path: string) => {
     return modules[ft]["default"];
   }
 
-  const url = toFileUrl(`${path}/${ft}.ts`);
-  modules = {
-    ...modules,
-    [ft]: (await exists(url.pathname))
-      ? { default: {}, ...(await import(url.href)) }
-      : { default: {} },
-  };
+  const url = path.toFileUrl(path.join(uri, `/${ft}.ts`));
+  try {
+    modules = {
+      ...modules,
+      [ft]: { default: {}, ...(await import(url.href)) },
+    };
+  } catch (_: unknown) {
+    modules = {
+      ...modules,
+      [ft]: { default: {} },
+    };
+  }
 
   return modules[ft]["default"];
 };
